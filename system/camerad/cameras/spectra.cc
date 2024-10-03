@@ -11,6 +11,7 @@
 
 #include "common/util.h"
 #include "common/swaglog.h"
+#include "system/camerad/cameras/ife.h"
 #include "system/camerad/cameras/spectra.h"
 
 // For debugging:
@@ -392,11 +393,14 @@ int SpectraCamera::sensors_init() {
 }
 
 void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx) {
+  LOGD("config IFE request_id %d (init %d)", request_id, io_mem_handle == 0);
   /*
     Handles initial + per-frame IFE config.
-    IFE = Image Front End
+    * IFE = Image Front End
+    * see camxifenode.cpp in camx
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
+  //size += sizeof(struct cam_patch_desc)*(request_id > 1 ? 0x2 : 0x8);
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -413,12 +417,6 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
   }
   pkt->header.size = size;
 
-  // *** kmd cmd buf ***
-  {
-    pkt->kmd_cmd_buf_index = 0;
-    pkt->kmd_cmd_buf_offset = 0;
-  }
-
   // *** cmd buf ***
   {
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
@@ -427,11 +425,21 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     // *** first command ***
     // TODO: support MMU
     buf_desc[0].size = buf0_size;
-    buf_desc[0].length = 0;
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
-    buf_desc[0].meta_data = 3;
+    buf_desc[0].meta_data = CAM_ISP_PACKET_META_COMMON;
     buf_desc[0].mem_handle = buf0_handle;
     buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
+
+    // this is a stream of IFE register configs and DMI commands
+    if (io_mem_handle == 0) {
+      buf_desc[0].length = build_initial_config((unsigned char*)buf0_ptr + buf_desc[0].offset);
+    } else if (request_id == 1) {
+      buf_desc[0].length = build_first_update((unsigned char*)buf0_ptr + buf_desc[0].offset);
+    } else {
+      buf_desc[0].length = build_update((unsigned char*)buf0_ptr + buf_desc[0].offset);
+    }
+    pkt->kmd_cmd_buf_offset = buf_desc[0].length;
+    pkt->kmd_cmd_buf_index = 0;
 
     // *** second command ***
     // parsed by cam_isp_packet_generic_blob_handler
@@ -453,9 +461,9 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
     static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
     tmp.resource_hfr = {
-      .num_ports = 1,  // 10 for YUV (but I don't think we need them)
+      .num_ports = 1,
       .port_hfr_config[0] = {
-        .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+        .resource_type = CAM_ISP_IFE_OUT_RES_FULL,
         .subsample_pattern = 1,
         .subsample_period = 0,
         .framedrop_pattern = 1,
@@ -466,10 +474,10 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
     static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
     tmp.clock = {
-      .usage_type = 1, // dual mode
+      .usage_type = 0, // dual mode
       .num_rdi = 4,
       .left_pix_hz = 404000000,
-      .right_pix_hz = 404000000,
+      //.right_pix_hz = 404000000,
       .rdi_hz[0] = 404000000,
     };
 
@@ -477,17 +485,24 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
     static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
     tmp.bw = {
-      .usage_type = 1, // dual mode
+      .usage_type = 0, // dual mode
       .num_rdi = 4,
       .left_pix_vote = {
         .resource_id = 0,
-        .cam_bw_bps = 450000000,
-        .ext_bw_bps = 450000000,
+        .cam_bw_bps = 0x59db2c80,
+        .ext_bw_bps = 0x59db2c80,
       },
+      /*
+      .right_pix_vote = {
+        .resource_id = 0,
+        .cam_bw_bps = 0x59db2c80,
+        .ext_bw_bps = 0x59db2c80,
+      },
+      */
       .rdi_vote[0] = {
         .resource_id = 0,
-        .cam_bw_bps = 8706200000,
-        .ext_bw_bps = 8706200000,
+        .cam_bw_bps = 0,
+        .ext_bw_bps = 0,
       },
     };
 
@@ -509,30 +524,27 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].offsets[0] = 0;
     io_cfg[0].mem_handle[0] = io_mem_handle;
+    io_cfg[0].mem_handle[1] = io_mem_handle;
 
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
       .height = sensor->frame_height + sensor->extra_height,
-      .plane_stride = sensor->frame_stride,
+      .plane_stride = ALIGNED_SIZE(sensor->frame_width, 0x10),
       .slice_height = sensor->frame_height + sensor->extra_height,
-
-      // these are for UBWC, we'll want that eventually
-      .meta_stride = 0x0,
-      .meta_size = 0x0,
-      .meta_offset = 0x0,
-      .packer_config = 0x0,
-      .mode_config = 0x0,
-      .tile_config = 0x0,
-      .h_init = 0x0,
-      .v_init = 0x0,
     };
-    io_cfg[0].format = sensor->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
-    io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
-    io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
+    io_cfg[0].planes[1] = (struct cam_plane_cfg){
+      .width = sensor->frame_width,
+      .height = sensor->frame_height/2 + sensor->extra_height,
+      .plane_stride = ALIGNED_SIZE(sensor->frame_width, 0x10),
+      .slice_height = ALIGNED_SIZE(sensor->frame_height/2 + sensor->extra_height, 0x10),
+    };
+    io_cfg[0].offsets[1] = (io_cfg[0].planes[0].plane_stride*io_cfg[0].planes[0].slice_height + io_cfg[0].planes[0].meta_size);
+    io_cfg[0].format = CAM_FORMAT_NV21;  // TODO: why is this NV21 here and NV12 in the initial device acquire?
+    io_cfg[0].color_space = 0;
+    io_cfg[0].color_pattern = 0x0;
+    io_cfg[0].bpp = 0;
+    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
@@ -540,9 +552,31 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
   }
 
   // *** patches ***
+  // sets up the kernel driver to do address translation for the IFE;
+  // it'll swap IOVA addrs into our main cmd buffer
   {
     pkt->num_patches = 0;
+    /*
+    pkt->num_patches = request_id > 1 ? 0x2 : 0x8;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+    for (int i = 0; i < pkt->num_patches; i++) {
+      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
+      patch->dst_buf_hdl = buf0_handle;
+      if (io_mem_handle == 0) {
+        patch->dst_offset = (uint32_t[]){0xfc, 0x198, 0x1d8, 0x1e4, 0x26c, 0x284, 0x290, 0x29c}[i];
+        patch->src_buf_hdl = (i == 0 || i == 4 || i == 8) ? ife_patch2.handle : ife_patch1.handle;
+        patch->src_offset = (uint32_t[]){0x0, 0x200, 0x400, 0x774, 0x120, 0x11d0, 0x12d0, 0x13d0}[i];
+      } else if (request_id == 1) {
+        patch->dst_offset = (uint32_t[]){0x10a5c, 0x10af8, 0x10b38, 0x10b44, 0x10bcc, 0x10be4, 0x10bf0, 0x10bfc}[i];
+        patch->src_buf_hdl = (i == 0 || i == 4) ? ife_patch1.handle : ife_patch2.handle;
+        patch->src_offset = (uint32_t[]){0x340, 0x16e0, 0x18e0, 0x1c54, 0x460, 0x26b0, 0x27b0, 0x28b0}[i];
+      } else {
+        patch->dst_offset = (uint32_t[]){0x10a5c, 0x10af8, 0x10b38, 0x10b44, 0x10bcc, 0x10be4, 0x10bf0, 0x10bfc}[i];
+        patch->src_buf_hdl = (i == 0 || i == 4) ? ife_patch1.handle : ife_patch2.handle;
+        patch->src_offset = (uint32_t[]){0x340, 0x16e0, 0x18e0, 0x1c54, 0x460, 0x26b0, 0x27b0, 0x28b0}[i];
+      }
+    }
+    */
   }
 
   int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
@@ -678,9 +712,11 @@ void SpectraCamera::configISP() {
     .left_stop = sensor->frame_width - 1,
     .left_width = sensor->frame_width,
 
+     /*
     .right_start = 0,
     .right_stop = sensor->frame_width - 1,
     .right_width = sensor->frame_width,
+    */
 
     .line_start = 0,
     .line_stop = sensor->frame_height + sensor->extra_height - 1,
@@ -695,8 +731,8 @@ void SpectraCamera::configISP() {
     // ISP outputs
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
-      .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = sensor->mipi_format,
+      .res_type = CAM_ISP_IFE_OUT_RES_FULL,
+      .format = CAM_FORMAT_NV12,
       .width = sensor->frame_width,
       .height = sensor->frame_height + sensor->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
@@ -715,9 +751,13 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // config IFE
-  alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
-                  CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-                  m->device_iommu, m->cdm_iommu);
+  buf0_ptr = alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
+                             CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                             m->device_iommu, m->cdm_iommu);
+
+  ife_patch1.init(m, 12480, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
+  ife_patch2.init(m, 80160, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
+
   config_ife(0, 0, 1, 0);
 }
 

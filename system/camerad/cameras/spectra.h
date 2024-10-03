@@ -67,6 +67,23 @@ public:
   int cdm_iommu = -1;
 };
 
+class SpectraBuf {
+public:
+  void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0) {
+    size = s;
+    alignment = a;
+    ptr = alloc_w_mmu_hdl(m->video0_fd, size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    assert(ptr != NULL);
+  };
+
+  int aligned_size() {
+    return ALIGNED_SIZE(size, alignment);
+  };
+
+  void *ptr;
+  int size, alignment, handle;
+};
+
 class SpectraCamera {
 public:
   SpectraCamera(SpectraMaster *master, const CameraConfig &config);
@@ -109,10 +126,14 @@ public:
 
   int32_t link_handle = -1;
 
-  const int buf0_size = 65624; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
-  const int buf0_alignment = 0x20;
-
+  // IFE command buffer
+  void *buf0_ptr;
   int buf0_handle = 0;
+  const int buf0_size = 67984; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
+  const int buf0_alignment = 0x20;
+	SpectraBuf ife_patch1;
+	SpectraBuf ife_patch2;
+
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
   uint64_t request_ids[FRAME_BUF_COUNT] = {};
