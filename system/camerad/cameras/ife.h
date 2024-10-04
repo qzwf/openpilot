@@ -480,6 +480,15 @@ int build_initial_config(uint8_t *dst) {
 int build_first_update(uint8_t *dst) {
   uint8_t *start = dst;
 
+  dst += write_random(dst, {
+    0x2c, 0xffffffff,   // IFE_0_VFE_MODULE_LENS_CGC_OVERRIDE
+    0x30, 0xffffffff,   // IFE_0_VFE_MODULE_STATS_CGC_OVERRIDE
+    0x34, 0xffffffff,   // IFE_0_VFE_MODULE_COLOR_CGC_OVERRIDE
+    0x38, 0xffffffff,   // IFE_0_VFE_MODULE_ZOOM_CGC_OVERRIDE
+    0x3c, 0xffffffff,   // IFE_0_VFE_MODULE_BUS_CGC_OVERRIDE
+  });
+
+
   dst += write_cont(dst, 0x4dc, {
     0x00000001,   // IFE_0_VFE_BLACK_CFG
     0x04050b84,   // IFE_0_VFE_BLACK_INTERP_R_0
