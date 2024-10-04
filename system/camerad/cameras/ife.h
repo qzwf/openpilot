@@ -323,7 +323,7 @@ int build_initial_config(uint8_t *dst) {
     0x00000000,   // IFE_0_VFE_SCALE_VID_Y_H_STRIPE_CFG_0
     0x00000000,   // IFE_0_VFE_SCALE_VID_Y_H_STRIPE_CFG_1
     0x00000787,   // IFE_0_VFE_SCALE_VID_Y_H_PAD_CFG
-    0x4b7704b7,   // IFE_0_VFE_SCALE_VID_Y_V_IMAGE_SIZE_CFG
+    0x04b704b7,   // IFE_0_VFE_SCALE_VID_Y_V_IMAGE_SIZE_CFG
     0x30036666,   // IFE_0_VFE_SCALE_VID_Y_V_PHASE_CFG
     0x00000000,   // IFE_0_VFE_SCALE_VID_Y_V_STRIPE_CFG_0
     0x00000000,   // IFE_0_VFE_SCALE_VID_Y_V_STRIPE_CFG_1
@@ -341,7 +341,7 @@ int build_initial_config(uint8_t *dst) {
     0x3006cccc,   // IFE_0_VFE_SCALE_VID_CBCR_V_PHASE_CFG
     0x00000000,   // IFE_0_VFE_SCALE_VID_CBCR_V_STRIPE_CFG_0
     0x00000000,   // IFE_0_VFE_SCALE_VID_CBCR_V_STRIPE_CFG_1
-    0x000004b7,   // IFE_0_VFE_SCALE_VID_CBCR_V_PAD_CFG
+    0x00000787,   // IFE_0_VFE_SCALE_VID_CBCR_V_PAD_CFG
   });
 
 
@@ -353,8 +353,8 @@ int build_initial_config(uint8_t *dst) {
   });
   // IFE_0_VFE_FULL_OUT_C_CROP_LINE_CFG
   dst += write_cont(dst, 0xe30, {
-    0x0000025b,   // IFE_0_VFE_FULL_OUT_C_CROP_LINE_CFG    // FIXME: has the wrong LAST_LINE
-    0x00000877,   // IFE_0_VFE_FULL_OUT_C_CROP_PIXEL_CFG
+    0x0000025b,   // IFE_0_VFE_FULL_OUT_C_CROP_LINE_CFG
+    0x00000787,   // IFE_0_VFE_FULL_OUT_C_CROP_PIXEL_CFG
   });
   // IFE_0_VFE_FULL_OUT_Y_CH0_CLAMP_CFG
   dst += write_cont(dst, 0xe18, {
@@ -370,13 +370,13 @@ int build_initial_config(uint8_t *dst) {
   // *** ifeds410 IQ module ***
   // IFE_0_VFE_DS4_Y_PRE_CROP_LINE_CFG
   dst += write_cont(dst, 0xd84, {
-    0x00b404eb,   // IFE_0_VFE_DS4_Y_PRE_CROP_LINE_CFG
-    0x0000077f,   // IFE_0_VFE_DS4_Y_PRE_CROP_PIXEL_CFG
+    0x000004b7,   // IFE_0_VFE_DS4_Y_PRE_CROP_LINE_CFG
+    0x00000787,   // IFE_0_VFE_DS4_Y_PRE_CROP_PIXEL_CFG
   });
   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
   dst += write_cont(dst, 0xda4, {
-    0x0,   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
-    0x0,   // IFE_0_VFE_DS4_C_PRE_CROP_PIXEL_CFG
+    0x000004b7,   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
+    0x00000787,   // IFE_0_VFE_DS4_C_PRE_CROP_PIXEL_CFG
   });
   // IFE_0_VFE_DS_4TO1_Y_1ST_CFG
   dst += write_cont(dst, 0xd60, {
@@ -487,7 +487,6 @@ int build_first_update(uint8_t *dst) {
     0x38, 0xffffffff,   // IFE_0_VFE_MODULE_ZOOM_CGC_OVERRIDE
     0x3c, 0xffffffff,   // IFE_0_VFE_MODULE_BUS_CGC_OVERRIDE
   });
-
 
   dst += write_cont(dst, 0x4dc, {
     0x00000001,   // IFE_0_VFE_BLACK_CFG
@@ -659,8 +658,8 @@ int build_first_update(uint8_t *dst) {
   });
   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
   dst += write_cont(dst, 0xda4, {
-    0x0,   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
-    0x0,   // IFE_0_VFE_DS4_C_PRE_CROP_PIXEL_CFG
+    0x000004b7,   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
+    0x00000787,   // IFE_0_VFE_DS4_C_PRE_CROP_PIXEL_CFG
   });
   // IFE_0_VFE_R2PD_1ST_CFG
   dst += write_cont(dst, 0xd6c, {
@@ -771,8 +770,8 @@ int build_update(uint8_t *dst) {
   });
   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
   dst += write_cont(dst, 0xda4, {
-    0x0,   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
-    0x0,   // IFE_0_VFE_DS4_C_PRE_CROP_PIXEL_CFG
+    0x000004b7,   // IFE_0_VFE_DS4_C_PRE_CROP_LINE_CFG
+    0x00000787,   // IFE_0_VFE_DS4_C_PRE_CROP_PIXEL_CFG
   });
   // IFE_0_VFE_R2PD_1ST_CFG
   dst += write_cont(dst, 0xd6c, {
