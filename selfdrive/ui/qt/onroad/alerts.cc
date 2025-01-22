@@ -44,11 +44,14 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
         a = {tr("TAKE CONTROL IMMEDIATELY"), tr("System Unresponsive"),
              "selfdriveUnresponsive", cereal::SelfdriveState::AlertSize::FULL,
              cereal::SelfdriveState::AlertStatus::CRITICAL};
-      } else {
-        a = {tr("System Unresponsive"), tr("Reboot Device"),
-             "selfdriveUnresponsivePermanent", cereal::SelfdriveState::AlertSize::MID,
-             cereal::SelfdriveState::AlertStatus::NORMAL};
       }
+      // commenting below alert for testing, to be uncommented once testing is complete
+      // else
+      // {
+      //   a = {tr("System Unresponsive"), tr("Reboot Device"),
+      //        "selfdriveUnresponsivePermanent", cereal::SelfdriveState::AlertSize::MID,
+      //        cereal::SelfdriveState::AlertStatus::NORMAL};
+      // }
     }
   }
   return a;
