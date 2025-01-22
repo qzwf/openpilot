@@ -52,6 +52,11 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
       //        "selfdriveUnresponsivePermanent", cereal::SelfdriveState::AlertSize::MID,
       //        cereal::SelfdriveState::AlertStatus::NORMAL};
       // }
+      else
+      {
+        a = {tr("Testing qzwf.."),"selfdriveUnresponsivePermanent", cereal::SelfdriveState::AlertSize::MID,
+             cereal::SelfdriveState::AlertStatus::NORMAL};
+      }
     }
   }
   return a;
