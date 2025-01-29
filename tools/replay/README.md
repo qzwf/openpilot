@@ -15,6 +15,8 @@ python3 tools/lib/auth.py
 You can replay a route from your comma account by specifying the route name.
 
 ```bash
+$ cd ~/openpilot && source .venv/bin/activate
+
 # Start a replay with a specific route:
 tools/replay/replay <route-name>
 
