@@ -30,12 +30,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "",
       "../assets/img_experimental_white.svg",
     },
-    {
-      "BydModifiedStockLong",
-      tr("Enable BYD Modified Stock Longitudinal Control"),
-      tr("On this car it works by multiplying a percentage smooth rate based on the distance of front cars detected by mrr."),
-      "../assets/offroad/icon_speed_limit.png",
-    },
+
     {
       "DisengageOnAccelerator",
       tr("Disengage on Accelerator Pedal"),
@@ -136,7 +131,6 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 
 void TogglesPanel::updateToggles() {
   auto experimental_mode_toggle = toggles["ExperimentalMode"];
-  auto modify_stocklong_toggle = toggles["BydModifiedStockLong"];
   const QString e2e_description = QString("%1<br>"
                                           "<h4>%2</h4><br>"
                                           "%3<br>"
