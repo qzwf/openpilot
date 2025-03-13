@@ -45,6 +45,7 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
+    libjpeg-dev \
     libqt5charts5-dev \
     libncurses5-dev \
     libssl-dev \
@@ -97,19 +98,25 @@ if [ -f "/etc/os-release" ]; then
   esac
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
-    # Setup panda udev rules
+    # Setup jungle udev rules
     $SUDO tee /etc/udev/rules.d/12-panda_jungle.rules > /dev/null <<EOF
 SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcf", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddef", MODE="0666"
+
 EOF
 
-    # Setup jungle udev rules
+    # Setup panda udev rules
     $SUDO tee /etc/udev/rules.d/11-panda.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
 EOF
 
-  $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
+    $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
   fi
 
 else
