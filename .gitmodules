@@ -1,11 +1,11 @@
 [submodule "panda"]
   path = panda
   url = ../../qzwf/panda.git
-  branch = master
+  branch = byd-atto3-port
 [submodule "opendbc"]
   path = opendbc_repo
   url = ../../qzwf/opendbc.git
-  branch = master
+  branch = byd-atto3-port
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git
