@@ -202,6 +202,10 @@ def hardware_thread(end_event, hw_queue) -> None:
   params = Params()
   power_monitor = PowerMonitoring()
 
+  uptime_offroad: float = params.get("UptimeOffroad")
+  uptime_onroad: float = params.get("UptimeOnroad")
+  last_uptime_ts: float = time.monotonic()
+
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
@@ -444,6 +448,17 @@ def hardware_thread(end_event, hw_queue) -> None:
           cloudlog.exception("failed to save offroad status")
 
     params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
+
+    now_ts = time.monotonic()
+    if off_ts:
+      uptime_offroad += now_ts - max(last_uptime_ts, off_ts)
+    elif started_ts:
+      uptime_onroad += now_ts - max(last_uptime_ts, started_ts)
+    last_uptime_ts = now_ts
+
+    if (count % int(60. / DT_HW)) == 0:
+      params.put("UptimeOffroad", str(uptime_offroad))
+      params.put("UptimeOnroad", str(uptime_onroad))
 
     count += 1
     should_start_prev = should_start
