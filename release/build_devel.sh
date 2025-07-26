@@ -17,18 +17,30 @@ rm -rf $TARGET_DIR
 mkdir -p $TARGET_DIR
 cd $TARGET_DIR
 cp -r $SOURCE_DIR/.git $TARGET_DIR
-pre-commit uninstall || true
+# Uninstall pre-commit hooks if pre-commit is available
+if command -v pre-commit > /dev/null 2>&1; then
+    pre-commit uninstall || true
+else
+    echo "[-] pre-commit not found, skipping hook uninstall"
+fi
 
 echo "[-] bringing __nightly and devel in sync T=$SECONDS"
 cd $TARGET_DIR
 
-git fetch --depth 1 origin __nightly
-git fetch --depth 1 origin devel
-
-git checkout -f --track origin/__nightly
-git reset --hard __nightly
-git checkout __nightly
-git reset --hard origin/devel
+# Check if __nightly branch exists, if not create it from devel
+if git ls-remote origin | grep -q "refs/heads/__nightly"; then
+    git fetch --depth 1 origin __nightly
+    git fetch --depth 1 origin devel
+    git checkout -f --track origin/__nightly
+    git reset --hard __nightly
+    git checkout __nightly
+    git reset --hard origin/devel
+else
+    echo "[-] __nightly branch not found, creating from devel"
+    git fetch --depth 1 origin devel
+    git checkout -f --track origin/devel
+    git checkout -b __nightly
+fi
 git clean -xdff
 git lfs uninstall
 
