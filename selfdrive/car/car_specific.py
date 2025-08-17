@@ -39,6 +39,21 @@ class CarSpecificEvents:
     if self.CP.brand in ('body', 'mock'):
       events = Events()
 
+    elif self.CP.brand == 'byd':
+      events = self.create_common_events(CS, CS_prev)
+
+      # BYD-specific events
+      if CS.steerFaultPermanent:
+        events.add(EventName.steerUnavailable)
+
+      # EV-specific warnings
+      if hasattr(CS, 'batteryLow') and CS.batteryLow:
+        events.add(EventName.lowBattery)
+
+      # ADAS system status
+      if hasattr(CS, 'lkasEnabled') and not CS.lkasEnabled:
+        events.add(EventName.lkasDisabled)
+
     elif self.CP.brand == 'ford':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.low, GearShifter.manumatic])
 
