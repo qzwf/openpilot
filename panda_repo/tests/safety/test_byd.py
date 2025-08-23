@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import unittest
+import pytest
 from panda import Panda
 from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import StdTest, make_msg, ALTERNATIVE_EXPERIENCE
+from panda.tests.safety.common import StdTest
 
 MSG_BYD_STEERING_MODULE_ADAS = 0x1E2  # 482
 MSG_BYD_ACC_CMD = 0x32E               # 814
@@ -100,5 +100,3 @@ class TestBydSafety(StdTest):
     self.safety.safety_rx_hook(self._brake_msg(1))
     self.assertFalse(self.safety.get_controls_allowed())
 
-if __name__ == "__main__":
-  unittest.main()
