@@ -25,6 +25,7 @@
 #include "opendbc/safety/modes/elm327.h"
 #include "opendbc/safety/modes/body.h"
 #include "opendbc/safety/modes/psa.h"
+#include "opendbc/safety/modes/byd.h"
 
 // CAN-FD only safety modes
 #ifdef CANFD
@@ -413,6 +414,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_HYUNDAI_CANFD, &hyundai_canfd_hooks},
 #endif
 #ifdef ALLOW_DEBUG
+    {SAFETY_BYD, &byd_hooks},
     {SAFETY_PSA, &psa_hooks},
     {SAFETY_SUBARU_PREGLOBAL, &subaru_preglobal_hooks},
     {SAFETY_VOLKSWAGEN_PQ, &volkswagen_pq_hooks},

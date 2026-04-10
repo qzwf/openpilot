@@ -1,0 +1,6 @@
+#!/home/qzwf/ishapilot/openpilot/openpilot_venv/bin/python3.11
+import sys
+from panda3d_tools import lwo_scan
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(lwo_scan())
