@@ -9,4 +9,5 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Tests running"
+      - uses: actions/checkout@v4
+      - run: echo "CI working"
