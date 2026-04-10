@@ -1,0 +1,12 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ "release3" ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Tests running"
