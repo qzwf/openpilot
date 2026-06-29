@@ -77,6 +77,10 @@ function launch {
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
+  # BYD speed calibration logger (background, logs to /data/byd_speed_log.csv)
+  nohup /usr/local/venv/bin/python3 $DIR/selfdrive/debug/byd_speed_logger.py \
+    > /tmp/byd_speed_logger.log 2>&1 &
+
   # start manager
   cd system/manager
   if [ ! -f $DIR/prebuilt ]; then
