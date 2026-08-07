@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh -o StrictHostKeyChecking=no comma@192.168.68.66 ' *)",
+      "Bash(ssh -o StrictHostKeyChecking=no comma@192.168.68.66 'ps aux | grep manager | grep -v grep | head -5')",
+      "Bash(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=10 comma@192.168.68.66 'echo ok')",
+      "Bash(ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=10 comma@192.168.68.66)",
+      "Bash(ssh comma@192.168.68.66 \"find /data/openpilot/panda -name 'byd.h' 2>/dev/null && echo '---' && ls /data/openpilot/panda/opendbc_repo/opendbc/safety/modes/ 2>/dev/null | head -10\")",
+      "Bash(ssh comma@192.168.68.66 \"ls /data/media/0/realdata/ | grep 00000065 | wc -l\")",
+      "Bash(ssh comma@192.168.68.66 \"python3 -m pip install pycryptodome 2>&1 | tail -3 && python3 -c 'from Crypto.PublicKey import RSA; print\\(\\\\\"ok\\\\\"\\)'\")",
+      "Bash(ssh comma@192.168.68.66 \"sed -i '1s|#!/usr/bin/env python3|#!/usr/local/venv/bin/python3|' /data/openpilot/panda/crypto/sign.py && head -1 /data/openpilot/panda/crypto/sign.py\")",
+      "Bash(ssh comma@192.168.68.66 \"cd /data/openpilot && PYTHONPATH=/data/openpilot/opendbc_repo /usr/local/venv/bin/scons -C panda -j4 2>&1 | tail -10\")",
+      "Bash(timeout 60 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 comma@192.168.68.66 'cd /data/media/0/realdata && ls -d 000000* 2>/dev/null | sed \"s/--[0-9]*$//\" | sort -u | tail -12; echo \"=== per-route segment counts \\(recent\\) ===\"; for r in 00000083--eb7b6dd3fa 00000084--a339d00f86 00000085--4036d896a5 00000086--0ac44597a1 00000087--d6e8d07284; do printf \"%s segs=%s\\\\n\" \"$r\" \"$\\(ls -d ${r}--* 2>/dev/null | wc -l\\)\"; done')"
+    ]
+  }
+}
